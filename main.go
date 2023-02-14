@@ -23,7 +23,7 @@ type ARPHeader struct {
 }
 
 func (h *ARPHeader) String() string {
-	return fmt.Sprintf("Sender MAC: %s Sender IP: %s\nTarget MAC: %s Target IP: %s",
+	return fmt.Sprintf("Sender MAC: %s Sender IP: %s Target MAC: %s Target IP: %s",
 		net.HardwareAddr(h.SenderMAC[:]).String(),
 		net.IP(h.SenderIP[:]).String(),
 		net.HardwareAddr(h.TargetMAC[:]).String(),
@@ -78,12 +78,16 @@ func main() {
 			log.Fatal(err)
 		}
 
-		header, err := ParseARPPacket(buffer[:n])
+		if n < 14+28 {
+			log.Fatalf("Not enough bytes read: %v", n)
+		}
+
+		header, err := ParseARPPacket(buffer[14 : 14+28])
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		fmt.Printf("Received ARP packet: %v\n", header)
+		fmt.Println(header)
 	}
 }
 
