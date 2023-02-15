@@ -1,79 +1,28 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
+	"flag"
 	"log"
 	"net"
+	"sync"
 	"syscall"
 )
 
-// ARPHeader represents the header of an ARP packet
-type ARPHeader struct {
-	HardwareType uint16
-	ProtocolType uint16
-	HardwareSize uint8
-	ProtocolSize uint8
-	OpCode       uint16
-	SenderMAC    [6]byte
-	SenderIP     [4]byte
-	TargetMAC    [6]byte
-	TargetIP     [4]byte
+type NetworkHost struct {
+	MAC      net.HardwareAddr
+	IP       net.IP
+	Hostname string
 }
 
-func (h *ARPHeader) String() string {
-	return fmt.Sprintf("Sender MAC: %s Sender IP: %s Target MAC: %s Target IP: %s",
-		net.HardwareAddr(h.SenderMAC[:]).String(),
-		net.IP(h.SenderIP[:]).String(),
-		net.HardwareAddr(h.TargetMAC[:]).String(),
-		net.IP(h.TargetIP[:]).String(),
-	)
-}
-
-// ParseARPPacket parses an ARP packet into an ARPHeader struct
-func ParseARPPacket(packet []byte) (*ARPHeader, error) {
-	var header ARPHeader
-
-	// Read the header from the packet
-	buf := bytes.NewReader(packet)
-	err := binary.Read(buf, binary.BigEndian, &header)
-	if err != nil {
-		return nil, err
-	}
-
-	return &header, nil
-}
-
-func main() {
-	// Open a raw socket for ARP packets
-	rawSocket, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_RAW, int(htons(syscall.ETH_P_ALL)))
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer syscall.Close(rawSocket)
-
-	// Bind the raw socket to the desired interface
-	iface, err := net.InterfaceByName("enp0s31f6")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	llAddr := syscall.SockaddrLinklayer{
-		Protocol: htons(syscall.ETH_P_ARP),
-		Ifindex:  iface.Index,
-	}
-
-	err = syscall.Bind(rawSocket, &llAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
+func collectArpPackets(ifaceName string, list *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
+	socket := CreateSocket(ifaceName)
+	defer syscall.Close(socket)
 
 	// Listen for incoming ARP packets
 	for {
-		var buffer [1500]byte
+		var buffer [128]byte
 
-		n, _, err := syscall.Recvfrom(rawSocket, buffer[:], 0)
+		n, _, err := syscall.Recvfrom(socket, buffer[:], 0)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -87,10 +36,58 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Println(header)
+		mu.Lock()
+		*list = append(*list, NetworkHost{IP: header.SenderIP[:], MAC: header.SenderMAC[:]})
+		cond.Signal()
+		mu.Unlock()
 	}
 }
 
-func htons(i uint16) uint16 {
-	return (i<<8)&0xff00 | i>>8
+func consumeArpPackets(list *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
+	allHosts := make([]NetworkHost, 0)
+	for {
+		mu.Lock()
+		if len(*list) == 0 {
+			cond.Wait()
+		}
+		var isNewHost bool = true
+		for _, host := range allHosts {
+			if host.MAC.String() == (*list)[0].MAC.String() {
+				isNewHost = false
+			}
+		}
+		if isNewHost {
+			var newHost = (*list)[0]
+			newHost.Hostname = TryGetHostname(newHost.IP)
+			allHosts = append(allHosts, newHost)
+			log.Printf("New host: %v, total hosts: %v", newHost, len(allHosts))
+		}
+		*list = (*list)[1:]
+		mu.Unlock()
+	}
+}
+
+func main() {
+	var ifaceName string
+	flag.StringVar(&ifaceName, "iface", "eth0", "network interface to use")
+	flag.Parse()
+
+	newlyFoundHosts := make([]NetworkHost, 0)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	cond := sync.NewCond(&mu)
+
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		collectArpPackets(ifaceName, &newlyFoundHosts, &mu, cond)
+	}()
+
+	go func() {
+		defer wg.Done()
+		consumeArpPackets(&newlyFoundHosts, &mu, cond)
+	}()
+
+	wg.Wait()
 }
