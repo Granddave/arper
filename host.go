@@ -21,10 +21,10 @@ func (collection *HostCollection) AddHost(host Host) {
 	collection.Hosts = append(collection.Hosts, host)
 }
 
-func (collection *HostCollection) HasHost(newHost Host) bool {
+func (collection *HostCollection) HasHost(other Host) bool {
 	hasHost := false
 	for _, host := range collection.Hosts {
-		if newHost.MAC.String() == host.MAC.String() {
+		if other.MAC.String() == host.MAC.String() {
 			hasHost = true
 		}
 	}
