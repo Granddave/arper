@@ -18,6 +18,7 @@ func collectArpPackets(ifaceName string, list *[]NetworkHost, mu *sync.Mutex, co
 	socket := CreateSocket(ifaceName)
 	defer syscall.Close(socket)
 
+	log.Printf("Listening for Arp responses on %v", ifaceName)
 	// Listen for incoming ARP packets
 	for {
 		var buffer [128]byte
