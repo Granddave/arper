@@ -50,7 +50,7 @@ func consumeArpPackets(list *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
 		if len(*list) == 0 {
 			cond.Wait()
 		}
-		var isNewHost bool = true
+		isNewHost := true
 		for _, host := range allHosts {
 			if host.MAC.String() == (*list)[0].MAC.String() {
 				isNewHost = false
