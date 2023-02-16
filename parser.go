@@ -3,8 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
-	"net"
 )
 
 // ARPHeader represents the header of an ARP packet
@@ -18,15 +16,6 @@ type ARPHeader struct {
 	SenderIP     [4]byte
 	TargetMAC    [6]byte
 	TargetIP     [4]byte
-}
-
-func (h *ARPHeader) String() string {
-	return fmt.Sprintf("Sender MAC: %s Sender IP: %s Target MAC: %s Target IP: %s",
-		net.HardwareAddr(h.SenderMAC[:]).String(),
-		net.IP(h.SenderIP[:]).String(),
-		net.HardwareAddr(h.TargetMAC[:]).String(),
-		net.IP(h.TargetIP[:]).String(),
-	)
 }
 
 // ParseARPPacket parses an ARP packet into an ARPHeader struct

@@ -14,12 +14,16 @@ type NetworkHost struct {
 	Hostname string
 }
 
-func collectArpPackets(ifaceName string, list *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
+type NetworkHostCollection struct {
+	Hosts []NetworkHost
+}
+
+func collectArpPackets(ifaceName string, newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
 	socket := CreateSocket(ifaceName)
 	defer syscall.Close(socket)
 
 	log.Printf("Listening for Arp responses on %v", ifaceName)
-	// Listen for incoming ARP packets
+
 	for {
 		var buffer [128]byte
 
@@ -38,32 +42,33 @@ func collectArpPackets(ifaceName string, list *[]NetworkHost, mu *sync.Mutex, co
 		}
 
 		mu.Lock()
-		*list = append(*list, NetworkHost{IP: header.SenderIP[:], MAC: header.SenderMAC[:]})
+		*newHosts = append(*newHosts, NetworkHost{IP: header.SenderIP[:], MAC: header.SenderMAC[:]})
 		cond.Signal()
 		mu.Unlock()
 	}
 }
 
-func consumeArpPackets(list *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
-	allHosts := make([]NetworkHost, 0)
+func consumeDiscoveredHosts(newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
+	hosts := make([]NetworkHost, 0)
+
 	for {
 		mu.Lock()
-		if len(*list) == 0 {
+		if len(*newHosts) == 0 {
 			cond.Wait()
 		}
 		isNewHost := true
-		for _, host := range allHosts {
-			if host.MAC.String() == (*list)[0].MAC.String() {
+		for _, host := range hosts {
+			if host.MAC.String() == (*newHosts)[0].MAC.String() {
 				isNewHost = false
 			}
 		}
 		if isNewHost {
-			var newHost = (*list)[0]
+			var newHost = (*newHosts)[0]
 			newHost.Hostname = TryGetHostname(newHost.IP)
-			allHosts = append(allHosts, newHost)
-			log.Printf("New host: %v, total hosts: %v", newHost, len(allHosts))
+			hosts = append(hosts, newHost)
+			log.Printf("New host: %v, total hosts: %v", newHost, len(hosts))
 		}
-		*list = (*list)[1:]
+		*newHosts = (*newHosts)[1:]
 		mu.Unlock()
 	}
 }
@@ -73,22 +78,10 @@ func main() {
 	flag.StringVar(&ifaceName, "iface", "eth0", "network interface to use")
 	flag.Parse()
 
-	newlyFoundHosts := make([]NetworkHost, 0)
+	newHosts := make([]NetworkHost, 1)
 	var mu sync.Mutex
-	var wg sync.WaitGroup
 	cond := sync.NewCond(&mu)
 
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-		collectArpPackets(ifaceName, &newlyFoundHosts, &mu, cond)
-	}()
-
-	go func() {
-		defer wg.Done()
-		consumeArpPackets(&newlyFoundHosts, &mu, cond)
-	}()
-
-	wg.Wait()
+	go collectArpPackets(ifaceName, &newHosts, &mu, cond)
+	go consumeDiscoveredHosts(&newHosts, &mu, cond)
 }
