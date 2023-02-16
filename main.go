@@ -3,24 +3,13 @@ package main
 import (
 	"flag"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 )
 
-type NetworkHost struct {
-	MAC      net.HardwareAddr
-	IP       net.IP
-	Hostname string
-}
-
-type NetworkHostCollection struct {
-	Hosts []NetworkHost
-}
-
-func collectArpPackets(ifaceName string, newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
+func collectArpPackets(ifaceName string, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
 	socket := CreateSocket(ifaceName)
 	defer syscall.Close(socket)
 
@@ -44,33 +33,29 @@ func collectArpPackets(ifaceName string, newHosts *[]NetworkHost, mu *sync.Mutex
 		}
 
 		mu.Lock()
-		*newHosts = append(*newHosts, NetworkHost{IP: header.SenderIP[:], MAC: header.SenderMAC[:]})
+		*newHosts = append(*newHosts, Host{IP: header.SenderIP[:], MAC: header.SenderMAC[:]})
 		cond.Signal()
 		mu.Unlock()
 	}
 }
 
-func consumeDiscoveredHosts(newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
-	hostCollection := NetworkHostCollection{}
+func consumeDiscoveredHosts(newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
+	hostCollection := HostCollection{}
 
 	for {
 		mu.Lock()
 		if len(*newHosts) == 0 {
 			cond.Wait()
 		}
-		isNewHost := true
-		for _, host := range hostCollection.Hosts {
-			if host.MAC.String() == (*newHosts)[0].MAC.String() {
-				isNewHost = false
-			}
+
+		var host = (*newHosts)[0]
+		if !hostCollection.HasHost(host) {
+			hostCollection.AddHost(host)
+			log.Printf("New host: %v, total hosts: %v", host, hostCollection.Len())
 		}
-		if isNewHost {
-			var newHost = (*newHosts)[0]
-			newHost.Hostname = TryGetHostname(newHost.IP)
-			hostCollection.Hosts = append(hostCollection.Hosts, newHost)
-			log.Printf("New host: %v, total hosts: %v", newHost, len(hostCollection.Hosts))
-		}
+
 		*newHosts = (*newHosts)[1:]
+
 		mu.Unlock()
 	}
 }
@@ -80,7 +65,7 @@ func main() {
 	flag.StringVar(&ifaceName, "iface", "eth0", "network interface to use")
 	flag.Parse()
 
-	newHosts := make([]NetworkHost, 1)
+	newHosts := make([]Host, 0)
 	var mu sync.Mutex
 	cond := sync.NewCond(&mu)
 
