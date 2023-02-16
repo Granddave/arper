@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"sync"
 	"syscall"
 )
@@ -84,4 +86,12 @@ func main() {
 
 	go collectArpPackets(ifaceName, &newHosts, &mu, cond)
 	go consumeDiscoveredHosts(&newHosts, &mu, cond)
+
+	// Set up signal handler
+	osChan := make(chan os.Signal, 1)
+	signal.Notify(osChan, syscall.SIGINT)
+	select {
+	case <-osChan:
+		log.Println("Shutting down...")
+	}
 }
