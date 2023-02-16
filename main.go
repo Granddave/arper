@@ -51,7 +51,7 @@ func collectArpPackets(ifaceName string, newHosts *[]NetworkHost, mu *sync.Mutex
 }
 
 func consumeDiscoveredHosts(newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.Cond) {
-	hosts := make([]NetworkHost, 0)
+	hostCollection := NetworkHostCollection{}
 
 	for {
 		mu.Lock()
@@ -59,7 +59,7 @@ func consumeDiscoveredHosts(newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.
 			cond.Wait()
 		}
 		isNewHost := true
-		for _, host := range hosts {
+		for _, host := range hostCollection.Hosts {
 			if host.MAC.String() == (*newHosts)[0].MAC.String() {
 				isNewHost = false
 			}
@@ -67,8 +67,8 @@ func consumeDiscoveredHosts(newHosts *[]NetworkHost, mu *sync.Mutex, cond *sync.
 		if isNewHost {
 			var newHost = (*newHosts)[0]
 			newHost.Hostname = TryGetHostname(newHost.IP)
-			hosts = append(hosts, newHost)
-			log.Printf("New host: %v, total hosts: %v", newHost, len(hosts))
+			hostCollection.Hosts = append(hostCollection.Hosts, newHost)
+			log.Printf("New host: %v, total hosts: %v", newHost, len(hostCollection.Hosts))
 		}
 		*newHosts = (*newHosts)[1:]
 		mu.Unlock()
