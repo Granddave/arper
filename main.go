@@ -40,7 +40,24 @@ func collectArpPackets(ifaceName string, newHosts *[]Host, mu *sync.Mutex, cond 
 }
 
 func consumeDiscoveredHosts(newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
+	dataHome := os.Getenv("XDG_DATA_HOME")
+	if dataHome == "" {
+		dataHome = os.Getenv("HOME") + "/.local/share"
+	}
+	dir := dataHome + "/arper"
+	err := os.MkdirAll(dir, 0700)
+	if err != nil {
+		log.Println("Error creating directory:", err)
+		return
+	}
+
+	hostsFile := dir + "/hosts.json"
+	log.Println("Hosts file: " + hostsFile)
+
 	hostCollection := HostCollection{}
+	if err := Deserialize(&hostCollection, hostsFile); err != nil {
+		log.Fatal(err)
+	}
 
 	for {
 		mu.Lock()
@@ -49,14 +66,16 @@ func consumeDiscoveredHosts(newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
 		}
 
 		var host = (*newHosts)[0]
+		*newHosts = (*newHosts)[1:]
+		mu.Unlock()
+
 		if !hostCollection.HasHost(host) {
 			hostCollection.AddHost(host)
 			log.Printf("New host: %v, total hosts: %v", host, hostCollection.Len())
+			if err := Serialize(hostCollection, hostsFile); err != nil {
+				log.Fatal(err)
+			}
 		}
-
-		*newHosts = (*newHosts)[1:]
-
-		mu.Unlock()
 	}
 }
 
