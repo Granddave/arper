@@ -3,13 +3,10 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
 func Serialize(t any, filename string) error {
-	log.Println("serializing")
-	log.Println(t.(HostCollection))
 	data, err := json.Marshal(t)
 	if err != nil {
 		return err
