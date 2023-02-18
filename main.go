@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"os"
 	"os/signal"
@@ -9,11 +8,11 @@ import (
 	"syscall"
 )
 
-func collectArpPackets(ifaceName string, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
-	socket := CreateSocket(ifaceName)
+func collectArpPackets(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
+	socket := CreateSocket(config.IfaceName)
 	defer syscall.Close(socket)
 
-	log.Printf("Listening for Arp responses on %v", ifaceName)
+	log.Printf("Listening for Arp responses on %v", config.IfaceName)
 
 	for {
 		var buffer [128]byte
@@ -39,25 +38,8 @@ func collectArpPackets(ifaceName string, newHosts *[]Host, mu *sync.Mutex, cond 
 	}
 }
 
-func consumeDiscoveredHosts(newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
-	dataHome := os.Getenv("XDG_DATA_HOME")
-	if dataHome == "" {
-		dataHome = os.Getenv("HOME") + "/.local/share"
-	}
-	dir := dataHome + "/arper"
-	err := os.MkdirAll(dir, 0700)
-	if err != nil {
-		log.Println("Error creating directory:", err)
-		return
-	}
-
-	hostsFile := dir + "/hosts.json"
-	log.Println("Hosts file: " + hostsFile)
-
-	hostCollection := HostCollection{}
-	if err := Deserialize(&hostCollection, hostsFile); err != nil {
-		log.Fatal(err)
-	}
+func consumeDiscoveredHosts(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
+	hostCollection := NewHostCollection(config.DatabaseFilepath)
 
 	for {
 		mu.Lock()
@@ -72,24 +54,20 @@ func consumeDiscoveredHosts(newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
 		if !hostCollection.HasHost(host) {
 			hostCollection.AddHost(host)
 			log.Printf("New host: %v, total hosts: %v", host, hostCollection.Len())
-			if err := Serialize(hostCollection, hostsFile); err != nil {
-				log.Fatal(err)
-			}
+
+			SaveHostCollection(hostCollection, config.DatabaseFilepath)
 		}
 	}
 }
 
 func main() {
-	var ifaceName string
-	flag.StringVar(&ifaceName, "iface", "eth0", "network interface to use")
-	flag.Parse()
-
+	config := NewConfig()
 	newHosts := make([]Host, 0)
 	var mu sync.Mutex
 	cond := sync.NewCond(&mu)
 
-	go collectArpPackets(ifaceName, &newHosts, &mu, cond)
-	go consumeDiscoveredHosts(&newHosts, &mu, cond)
+	go collectArpPackets(config, &newHosts, &mu, cond)
+	go consumeDiscoveredHosts(config, &newHosts, &mu, cond)
 
 	// Set up signal handler
 	osChan := make(chan os.Signal, 1)
