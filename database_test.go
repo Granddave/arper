@@ -1,19 +1,26 @@
 package main
 
 import (
+	"net"
 	"os"
 	"path"
 	"testing"
+	"time"
 )
 
 func TestInitializeDatabaseFile(t *testing.T) {
+	// Arrange
 	testDir := t.TempDir()
 	testFile := path.Join(testDir, "test.db")
 
-	// Call the function to initialize the test file
+	// Act
 	result := initializeDatabaseFile(testFile)
 
-	// Check that the file was created and has the expected permissions
+	// Assert
+	if !result {
+		t.Errorf("Test failed: initializeDatabaseFile returned false")
+	}
+
 	fileInfo, err := os.Stat(testFile)
 	if err != nil {
 		t.Errorf("Test failed: %v", err)
@@ -24,9 +31,34 @@ func TestInitializeDatabaseFile(t *testing.T) {
 	if fileInfo.Mode().Perm() != 0644 {
 		t.Errorf("Test failed: file has incorrect permissions")
 	}
+}
 
-	// Check that the function returned true
-	if !result {
-		t.Errorf("Test failed: initializeDatabaseFile returned false")
+func TestDatabase(t *testing.T) {
+	// Arrange
+	host := Host{
+		MAC:       net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
+		IP:        net.ParseIP("192.0.2.1"),
+		Hostname:  "example.com",
+		Timestamp: time.Now(),
+	}
+
+	// Act
+	// TODO: Test NewDatabase
+	db := Database{}
+	db.AddHost(host)
+	// TODO: Test Save()
+	// TODO: Test NewDatabase() by reading serialized database
+
+	// Assert
+	if len(db.Hosts) != 1 {
+		t.Errorf("AddHost failed, expected length to be 1, got %d", len(db.Hosts))
+	}
+
+	if !db.HasHost(host) {
+		t.Errorf("HasHost failed, expected host to exist, got false")
+	}
+
+	if db.Len() != 1 {
+		t.Errorf("Len failed, expected length to be 1, got %d", db.Len())
 	}
 }

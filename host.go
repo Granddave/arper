@@ -1,32 +1,22 @@
 package main
 
-import "net"
+import (
+	"fmt"
+	"net"
+	"time"
+)
 
 type Host struct {
-	MAC      net.HardwareAddr
-	IP       net.IP
-	Hostname string
+	MAC       net.HardwareAddr
+	IP        net.IP
+	Hostname  string
+	Timestamp time.Time
 }
 
-type HostCollection struct {
-	Hosts []Host
+func NewHost(MAC net.HardwareAddr, IP net.IP) *Host {
+	return &Host{MAC: MAC, IP: IP, Hostname: TryGetHostname(IP), Timestamp: time.Now()}
 }
 
-func (collection *HostCollection) Len() int {
-	return len(collection.Hosts)
-}
-
-func (collection *HostCollection) AddHost(host Host) {
-	host.Hostname = TryGetHostname(host.IP)
-	collection.Hosts = append(collection.Hosts, host)
-}
-
-func (collection *HostCollection) HasHost(other Host) bool {
-	hasHost := false
-	for _, host := range collection.Hosts {
-		if other.MAC.String() == host.MAC.String() {
-			hasHost = true
-		}
-	}
-	return hasHost
+func (h Host) String() string {
+	return fmt.Sprintf("MAC=%v IP=%v Hostname='%v'", h.MAC, h.IP, h.Hostname)
 }

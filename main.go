@@ -32,14 +32,14 @@ func collectArpPackets(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *s
 		}
 
 		mu.Lock()
-		*newHosts = append(*newHosts, Host{IP: header.SenderIP[:], MAC: header.SenderMAC[:]})
+		*newHosts = append(*newHosts, *NewHost(header.SenderMAC[:], header.SenderIP[:]))
 		cond.Signal()
 		mu.Unlock()
 	}
 }
 
 func consumeDiscoveredHosts(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
-	hostCollection := NewHostCollection(config.DatabaseFilepath)
+	database := NewDatabase(config.DatabaseFilepath)
 
 	for {
 		mu.Lock()
@@ -51,11 +51,10 @@ func consumeDiscoveredHosts(config *Config, newHosts *[]Host, mu *sync.Mutex, co
 		*newHosts = (*newHosts)[1:]
 		mu.Unlock()
 
-		if !hostCollection.HasHost(host) {
-			hostCollection.AddHost(host)
-			log.Printf("New host: %v, total hosts: %v", host, hostCollection.Len())
-
-			SaveHostCollection(hostCollection, config.DatabaseFilepath)
+		if !database.HasHost(host) {
+			database.AddHost(host)
+			database.Save()
+			log.Printf("New host (%v): %v", database.Len(), host)
 		}
 	}
 }

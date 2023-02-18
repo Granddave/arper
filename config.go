@@ -44,10 +44,10 @@ func (c *Config) logCurrentConfigs() {
 	v := reflect.ValueOf(*c)
 	t := v.Type()
 
-	log.Println("Active configuration")
+	log.Println("Active configuration:")
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldName := t.Field(i).Name
-		log.Printf("%s: %v\n", fieldName, field.Interface())
+		log.Printf("  %s: %v\n", fieldName, field.Interface())
 	}
 }
