@@ -21,16 +21,14 @@ func htons(i uint16) uint16 {
 }
 
 func CreateSocket(ifaceName string) int {
-	// Open a raw socket for ARP packets
 	rawSocket, err := syscall.Socket(syscall.AF_PACKET, syscall.SOCK_RAW, int(htons(syscall.ETH_P_ALL)))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to open socket: %v", err)
 	}
 
-	// Bind the raw socket to the desired interface
 	iface, err := net.InterfaceByName(ifaceName)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to get interface by name: %v", err)
 	}
 
 	llAddr := syscall.SockaddrLinklayer{
@@ -40,7 +38,7 @@ func CreateSocket(ifaceName string) int {
 
 	err = syscall.Bind(rawSocket, &llAddr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to bind socket to interface: %v", err)
 	}
 
 	return rawSocket

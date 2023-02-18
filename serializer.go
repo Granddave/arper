@@ -6,20 +6,20 @@ import (
 	"os"
 )
 
-func Serialize(t any, filename string) error {
+func Serialize(t any, filepath string) error {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filename, data, 0644)
+	err = ioutil.WriteFile(filepath, data, 0644)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func Deserialize(dataType interface{}, filename string) error {
-	file, err := os.Open(filename)
+func Deserialize(dataType interface{}, filepath string) error {
+	file, err := os.Open(filepath)
 	if err != nil {
 		return err
 	}
