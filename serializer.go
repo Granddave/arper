@@ -7,7 +7,7 @@ import (
 )
 
 func Serialize(t any, filepath string) error {
-	data, err := json.Marshal(t)
+	data, err := json.MarshalIndent(t, "", "  ")
 	if err != nil {
 		return err
 	}
