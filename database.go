@@ -20,13 +20,12 @@ func (db *Database) AddHost(host Host) {
 }
 
 func (db *Database) HasHost(other Host) bool {
-	hasHost := false
 	for _, host := range db.Hosts {
 		if other.MAC.String() == host.MAC.String() {
-			hasHost = true
+			return true
 		}
 	}
-	return hasHost
+	return false
 }
 
 func initializeDatabaseFile(filepath string) bool {
