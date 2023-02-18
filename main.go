@@ -60,6 +60,8 @@ func consumeDiscoveredHosts(config *Config, newHosts *[]Host, mu *sync.Mutex, co
 }
 
 func main() {
+	InitLogging()
+
 	config := NewConfig()
 	newHosts := make([]Host, 0)
 	var mu sync.Mutex
