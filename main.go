@@ -9,10 +9,10 @@ import (
 )
 
 func collectArpPackets(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
-	socket := CreateSocket(config.IfaceName)
+	socket := CreateSocket(config.Iface)
 	defer syscall.Close(socket)
 
-	log.Printf("Listening for Arp responses on %v", config.IfaceName)
+	log.Printf("Listening for Arp responses on %v", config.Iface)
 
 	for {
 		var buffer [128]byte

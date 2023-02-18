@@ -9,19 +9,25 @@ import (
 const DefaultConfigFilepath = "/etc/arper/config.json"
 
 type Config struct {
-	IfaceName        string
+	Iface            string
 	DatabaseFilepath string
 }
 
-func NewConfig() *Config {
-	config := Config{
-		IfaceName:        "eth0",
+func DefaultConfig() *Config {
+	return &Config{
+		Iface:            "eth0",
 		DatabaseFilepath: "/var/lib/arper/hosts.json",
 	}
+}
+
+func NewConfig() *Config {
+	config := DefaultConfig()
 	config.readConfigFromFile(DefaultConfigFilepath)
 	config.parseFlags()
+
 	config.logCurrentConfigs()
-	return &config
+
+	return config
 }
 
 func (c *Config) readConfigFromFile(configFilename string) {
@@ -29,7 +35,7 @@ func (c *Config) readConfigFromFile(configFilename string) {
 }
 
 func (c *Config) parseFlags() {
-	flag.StringVar(&c.IfaceName, "iface", c.IfaceName, "network interface to use")
+	flag.StringVar(&c.Iface, "iface", c.Iface, "network interface to use")
 	flag.StringVar(&c.DatabaseFilepath, "db", c.DatabaseFilepath, "filepath to database")
 	flag.Parse()
 }
