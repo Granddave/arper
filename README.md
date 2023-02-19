@@ -16,14 +16,16 @@ Root privileges are required since `arper` listen on raw packets on the specifie
 network interface.
 
 ```bash
-sudo arper [-db PATH] [-iface IFACE]
+sudo arper [-db PATH] [-iface IFACE] [-discord-webhook URL]
 ```
 
 ### Command line arguments
 
 ```bash
-  -db string
+    -db string
         filepath to database (default "/var/lib/arper/hosts.json")
+  -discord-webhook string
+        Discord Webhook URL for notifications
   -iface string
         network interface to use (default "eth0")
 ```
@@ -44,7 +46,6 @@ go build
 ## Roadmap
 
 - Configuration file support
-- Notification support
 - Hardware vendor lookup
 
 ## Similar applications

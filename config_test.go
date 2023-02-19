@@ -13,19 +13,43 @@ func TestNewConfig(t *testing.T) {
 	}{
 		{
 			[]string{},
-			&Config{Iface: "eth0", DatabaseFilepath: "/var/lib/arper/hosts.json"},
+			&Config{
+				Iface:             "eth0",
+				DatabaseFilepath:  "/var/lib/arper/hosts.json",
+				DiscordWebhookURL: "",
+			},
 		},
 		{
-			[]string{"-iface", "eth1", "-db", "/tmp/hosts.json"},
-			&Config{Iface: "eth1", DatabaseFilepath: "/tmp/hosts.json"},
+			[]string{"-iface", "eth1", "-db", "/tmp/hosts.json", "https://discord.com/api/webhooks/891230"},
+			&Config{
+				Iface:             "eth1",
+				DatabaseFilepath:  "/tmp/hosts.json",
+				DiscordWebhookURL: "https://discord.com/api/webhooks/891230",
+			},
 		},
 		{
 			[]string{"-iface", "lo"},
-			&Config{Iface: "lo", DatabaseFilepath: "/var/lib/arper/hosts.json"},
+			&Config{
+				Iface:             "lo",
+				DatabaseFilepath:  "/var/lib/arper/hosts.json",
+				DiscordWebhookURL: "",
+			},
 		},
 		{
 			[]string{"-db", "/tmp/hosts2.json"},
-			&Config{Iface: "eth0", DatabaseFilepath: "/tmp/hosts2.json"},
+			&Config{
+				Iface:             "eth0",
+				DatabaseFilepath:  "/tmp/hosts2.json",
+				DiscordWebhookURL: "",
+			},
+		},
+		{
+			[]string{"-discord-webhook", "https://discord.com/api/webhooks/891230"},
+			&Config{
+				Iface:             "eth0",
+				DatabaseFilepath:  "/var/lib/arper/hosts.json",
+				DiscordWebhookURL: "https://discord.com/api/webhooks/891230",
+			},
 		},
 	}
 

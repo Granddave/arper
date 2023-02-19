@@ -9,14 +9,16 @@ import (
 const DefaultConfigFilepath = "/etc/arper/config.json"
 
 type Config struct {
-	Iface            string
-	DatabaseFilepath string
+	Iface             string
+	DatabaseFilepath  string
+	DiscordWebhookURL string
 }
 
 func DefaultConfig() *Config {
 	return &Config{
-		Iface:            "eth0",
-		DatabaseFilepath: "/var/lib/arper/hosts.json",
+		Iface:             "eth0",
+		DatabaseFilepath:  "/var/lib/arper/hosts.json",
+		DiscordWebhookURL: "",
 	}
 }
 
@@ -37,6 +39,7 @@ func (c *Config) readConfigFromFile(configFilename string) {
 func (c *Config) parseFlags() {
 	flag.StringVar(&c.Iface, "iface", c.Iface, "network interface to use")
 	flag.StringVar(&c.DatabaseFilepath, "db", c.DatabaseFilepath, "filepath to database")
+	flag.StringVar(&c.DiscordWebhookURL, "discord-webhook", c.DiscordWebhookURL, "Discord Webhook URL for notifications")
 	flag.Parse()
 }
 

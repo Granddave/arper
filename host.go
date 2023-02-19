@@ -20,3 +20,7 @@ func NewHost(MAC net.HardwareAddr, IP net.IP) *Host {
 func (h Host) String() string {
 	return fmt.Sprintf("MAC=%v IP=%v Hostname='%v'", h.MAC, h.IP, h.Hostname)
 }
+
+func (h Host) NotificationText() string {
+	return fmt.Sprintf("**New host:** MAC=`%v` IP=`%v` Hostname=`%v`", h.MAC, h.IP, h.Hostname)
+}
