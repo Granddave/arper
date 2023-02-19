@@ -43,7 +43,7 @@ Go version >= 1.18
 ## Build Instructions
 
 ```bash
-go build
+go build ./cmd/arper
 ```
 
 

@@ -1,9 +1,11 @@
-package main
+package notifications
 
 import (
 	"bytes"
 	"log"
 	"net/http"
+
+	"github.com/granddave/arper/pkg/arp"
 )
 
 type Notifier struct {
@@ -14,7 +16,7 @@ func NewNotifier(webhookUrl string) *Notifier {
 	return &Notifier{webhookUrl}
 }
 
-func (n *Notifier) NotifyNewHost(host *Host) {
+func (n *Notifier) NotifyNewHost(host *arp.Host) {
 	if n.WebhookURL == "" {
 		return
 	}

@@ -1,9 +1,11 @@
-package main
+package arp
 
 import (
 	"log"
 	"os"
 	"path"
+
+	"github.com/granddave/arper/pkg/utils"
 )
 
 type Database struct {
@@ -52,7 +54,7 @@ func NewDatabase(databaseFilepath string) *Database {
 
 	db := Database{Filepath: databaseFilepath}
 
-	if err := Deserialize(&db.Hosts, db.Filepath); err != nil {
+	if err := utils.Deserialize(&db.Hosts, db.Filepath); err != nil {
 		log.Printf("Failed to deserialize database: %v", err)
 
 		log.Printf("Removing and recreating")
@@ -73,7 +75,7 @@ func NewDatabase(databaseFilepath string) *Database {
 }
 
 func (db *Database) Save() {
-	if err := Serialize(db.Hosts, db.Filepath); err != nil {
+	if err := utils.Serialize(db.Hosts, db.Filepath); err != nil {
 		log.Printf("Failed to serialize database: %v", err)
 	}
 }

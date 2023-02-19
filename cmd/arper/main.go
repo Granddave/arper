@@ -6,10 +6,15 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/granddave/arper/pkg/arp"
+	"github.com/granddave/arper/pkg/config"
+	"github.com/granddave/arper/pkg/notifications"
+	"github.com/granddave/arper/pkg/utils"
 )
 
-func collectArpPackets(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
-	socket := CreateSocket(config.Iface)
+func collectArpPackets(config *config.Config, newHosts *[]arp.Host, mu *sync.Mutex, cond *sync.Cond) {
+	socket := arp.CreateSocket(config.Iface)
 	defer syscall.Close(socket)
 
 	log.Printf("Listening for Arp responses on %v", config.Iface)
@@ -26,21 +31,21 @@ func collectArpPackets(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *s
 			log.Fatalf("Not enough bytes read: %v", n)
 		}
 
-		header, err := ParseARPPacket(buffer[14 : 14+28])
+		header, err := arp.ParseARPPacket(buffer[14 : 14+28])
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		mu.Lock()
-		*newHosts = append(*newHosts, *NewHost(header.SenderMAC[:], header.SenderIP[:]))
+		*newHosts = append(*newHosts, *arp.NewHost(header.SenderMAC[:], header.SenderIP[:]))
 		cond.Signal()
 		mu.Unlock()
 	}
 }
 
-func consumeDiscoveredHosts(config *Config, newHosts *[]Host, mu *sync.Mutex, cond *sync.Cond) {
-	database := NewDatabase(config.DatabaseFilepath)
-	notifier := NewNotifier(config.DiscordWebhookURL)
+func consumeDiscoveredHosts(config *config.Config, newHosts *[]arp.Host, mu *sync.Mutex, cond *sync.Cond) {
+	database := arp.NewDatabase(config.DatabaseFilepath)
+	notifier := notifications.NewNotifier(config.DiscordWebhookURL)
 
 	for {
 		mu.Lock()
@@ -62,10 +67,10 @@ func consumeDiscoveredHosts(config *Config, newHosts *[]Host, mu *sync.Mutex, co
 }
 
 func main() {
-	InitLogging()
+	utils.InitLogging()
 
-	config := NewConfig()
-	newHosts := make([]Host, 0)
+	config := config.NewConfig()
+	newHosts := make([]arp.Host, 0)
 	var mu sync.Mutex
 	cond := sync.NewCond(&mu)
 

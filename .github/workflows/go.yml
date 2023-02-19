@@ -25,5 +25,5 @@ jobs:
         run: go version
       - name: Build and test
         run: |
-          go build
-          go test -v
+          go build ./cmd/arper
+          go test ./...
