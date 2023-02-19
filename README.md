@@ -1,8 +1,12 @@
-# Arper
+<div align="center">
+
+![arper logo](res/arper.png)
+
+<i>Simple Arp listener written in Go.</i>
+
+</div>
 
 [![Go CI](https://github.com/Granddave/arper/actions/workflows/go.yml/badge.svg)](https://github.com/Granddave/arper/actions/workflows/go.yml)
-
-Simple Arp listener written in Go.
 
 ## About
 
@@ -22,7 +26,7 @@ sudo arper [-db PATH] [-iface IFACE] [-discord-webhook URL]
 ### Command line arguments
 
 ```bash
-    -db string
+  -db string
         filepath to database (default "/var/lib/arper/hosts.json")
   -discord-webhook string
         Discord Webhook URL for notifications
