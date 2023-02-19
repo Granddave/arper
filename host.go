@@ -22,5 +22,9 @@ func (h Host) String() string {
 }
 
 func (h Host) NotificationText() string {
-	return fmt.Sprintf("**New host:** MAC=`%v` IP=`%v` Hostname=`%v`, Timestamp=%v", h.MAC, h.IP, h.Hostname, h.Timestamp.Format(time.RFC3339))
+	hostname := h.Hostname
+	if hostname == "" {
+		hostname = "-"
+	}
+	return fmt.Sprintf("**New host:** Timestamp=`%v`, MAC=`%v` IP=`%v` Hostname=`%v`", h.Timestamp.Format(time.RFC3339), h.MAC, h.IP, hostname)
 }
