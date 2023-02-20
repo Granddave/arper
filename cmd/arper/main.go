@@ -31,7 +31,7 @@ func collectArpPackets(config *config.Config, newHosts *[]arp.Host, mu *sync.Mut
 
 func consumeDiscoveredHosts(config *config.Config, newHosts *[]arp.Host, mu *sync.Mutex, cond *sync.Cond) {
 	database := arp.NewDatabase(config.DatabaseFilepath)
-	notifier := notifications.NewNotifier(config.DiscordWebhookURL)
+	notificationManager := notifications.NewNotificationManager(config)
 
 	for {
 		mu.Lock()
@@ -46,8 +46,7 @@ func consumeDiscoveredHosts(config *config.Config, newHosts *[]arp.Host, mu *syn
 		if !database.HasHost(host) {
 			database.AddHost(host)
 			database.Save()
-			log.Printf("New host (%v): %v", database.Len(), host)
-			notifier.NotifyNewHost(&host)
+			notificationManager.NotifyNewHost(&host)
 		}
 	}
 }
