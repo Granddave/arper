@@ -11,7 +11,14 @@
 ## About
 
 `arper` is a tool that listens for Arp response packets and keeps track on the
-devices on the network. New hosts are discovered and stored in a local database.
+devices on the network.
+
+### Features
+
+- Notification support (Discord Webhook API)
+- Hostname lookup
+- Hardware vendor lookup
+- Persistant storage
 
 
 ## Usage
@@ -50,7 +57,8 @@ go build ./cmd/arper
 ## Roadmap
 
 - Configuration file support
-- Hardware vendor lookup
+- Hardware vendor lookup caching to minimize the API requests
+
 
 ## Similar applications
 
