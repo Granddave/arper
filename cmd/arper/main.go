@@ -14,30 +14,16 @@ import (
 )
 
 func collectArpPackets(config *config.Config, newHosts *[]arp.Host, mu *sync.Mutex, cond *sync.Cond) {
-	socket := arp.CreateSocket(config.Iface)
-	defer syscall.Close(socket)
+	arpListener := arp.NewArpListener(config.Iface)
+	defer arpListener.CloseSocket()
 
 	log.Printf("Listening for Arp responses on %v", config.Iface)
 
 	for {
-		var buffer [128]byte
-
-		n, _, err := syscall.Recvfrom(socket, buffer[:], 0)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if n < 14+28 {
-			log.Fatalf("Not enough bytes read: %v", n)
-		}
-
-		header, err := arp.ParseARPPacket(buffer[14 : 14+28])
-		if err != nil {
-			log.Fatal(err)
-		}
+		newHost := arpListener.AwaitArpResponse()
 
 		mu.Lock()
-		*newHosts = append(*newHosts, *arp.NewHost(header.SenderMAC[:], header.SenderIP[:]))
+		*newHosts = append(*newHosts, *newHost)
 		cond.Signal()
 		mu.Unlock()
 	}
