@@ -45,7 +45,7 @@ func TestDatabase(t *testing.T) {
 	// Act
 	// TODO: Test NewDatabase
 	db := Database{}
-	db.AddHost(host)
+	db.AddHost(&host)
 	// TODO: Test Save()
 	// TODO: Test NewDatabase() by reading serialized database
 

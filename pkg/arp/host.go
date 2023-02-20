@@ -18,17 +18,29 @@ func NewHost(MAC net.HardwareAddr, IP net.IP) *Host {
 	return &Host{
 		MAC:       MAC,
 		IP:        IP,
-		Hostname:  TryGetHostname(IP),
-		Vendor:    GetVendorName(MAC.String()),
 		Timestamp: time.Now(),
 	}
 }
 
-func (h Host) String() string {
+func (h *Host) TryLookupHostname() {
+	names, err := net.LookupAddr(h.IP.String())
+
+	if err != nil {
+		return
+	}
+
+	h.Hostname = names[0]
+}
+
+func (h *Host) TryLookupVendor() {
+	h.Vendor = GetVendorName(h.MAC.String())
+}
+
+func (h *Host) String() string {
 	return fmt.Sprintf("MAC=%v IP=%v Vendor='%s' Hostname='%v'", h.MAC, h.IP, h.Vendor, h.Hostname)
 }
 
-func (h Host) NotificationText() string {
+func (h *Host) NotificationText() string {
 	hostname := h.Hostname
 	if hostname == "" {
 		hostname = "-"

@@ -44,7 +44,7 @@ func consumeDiscoveredHosts(config *config.Config, newHosts *[]arp.Host, mu *syn
 		mu.Unlock()
 
 		if !database.HasHost(host) {
-			database.AddHost(host)
+			database.AddHost(&host)
 			database.Save()
 			notificationManager.NotifyNewHost(&host)
 		}

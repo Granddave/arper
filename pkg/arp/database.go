@@ -9,25 +9,43 @@ import (
 )
 
 type Database struct {
-	Hosts    []Host
+	Contents struct {
+		Hosts   []Host
+		Vendors map[string]string
+	}
 	Filepath string
 }
 
 func (db *Database) Len() int {
-	return len(db.Hosts)
+	return len(db.Contents.Hosts)
 }
 
-func (db *Database) AddHost(host Host) {
-	db.Hosts = append(db.Hosts, host)
+func (db *Database) AddHost(host *Host) {
+	host.TryLookupHostname()
+	db.setVendorForHost(host)
+
+	db.Contents.Hosts = append(db.Contents.Hosts, *host)
 }
 
 func (db *Database) HasHost(other Host) bool {
-	for _, host := range db.Hosts {
+	for _, host := range db.Contents.Hosts {
 		if other.MAC.String() == host.MAC.String() {
 			return true
 		}
 	}
 	return false
+}
+
+func (db *Database) setVendorForHost(host *Host) {
+	vendorPart := GetVendorPart(host.MAC.String())
+	if vendor, exists := db.Contents.Vendors[vendorPart]; exists {
+		host.Vendor = vendor
+	} else {
+		host.TryLookupVendor()
+		if host.Vendor != "" {
+			db.Contents.Vendors[vendorPart] = host.Vendor
+		}
+	}
 }
 
 func initializeDatabaseFile(filepath string) bool {
@@ -54,7 +72,7 @@ func NewDatabase(databaseFilepath string) *Database {
 
 	db := Database{Filepath: databaseFilepath}
 
-	if err := utils.Deserialize(&db.Hosts, db.Filepath); err != nil {
+	if err := utils.Deserialize(&db.Contents, db.Filepath); err != nil {
 		log.Printf("Failed to deserialize database: %v", err)
 
 		log.Printf("Removing and recreating")
@@ -75,7 +93,7 @@ func NewDatabase(databaseFilepath string) *Database {
 }
 
 func (db *Database) Save() {
-	if err := utils.Serialize(db.Hosts, db.Filepath); err != nil {
+	if err := utils.Serialize(db.Contents.Hosts, db.Filepath); err != nil {
 		log.Printf("Failed to serialize database: %v", err)
 	}
 }

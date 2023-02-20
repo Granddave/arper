@@ -7,8 +7,17 @@ import (
 	"net/http"
 )
 
-func GetVendorName(macAddress string) string {
-	url := fmt.Sprintf("https://api.macvendors.com/%s", macAddress)
+func GetVendorPart(macAddress string) string {
+	return macAddress[0:7]
+}
+
+func GetVendorName(macAddressOrVendorPart string) string {
+	vendorPart := macAddressOrVendorPart
+	if len(macAddressOrVendorPart) > 8 {
+		vendorPart = GetVendorPart(macAddressOrVendorPart)
+	}
+
+	url := fmt.Sprintf("https://api.macvendors.com/%s", vendorPart)
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("Failed to execute request: %v", err)
