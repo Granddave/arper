@@ -9,6 +9,7 @@ import (
 
 	"github.com/granddave/arper/pkg/arp"
 	"github.com/granddave/arper/pkg/config"
+	"github.com/granddave/arper/pkg/database"
 	"github.com/granddave/arper/pkg/notifications"
 	"github.com/granddave/arper/pkg/utils"
 )
@@ -30,7 +31,7 @@ func collectArpPackets(config *config.Config, newHosts *[]arp.Host, mu *sync.Mut
 }
 
 func consumeDiscoveredHosts(config *config.Config, newHosts *[]arp.Host, mu *sync.Mutex, cond *sync.Cond) {
-	database := arp.NewDatabase(config.DatabaseFilepath)
+	db := database.NewDatabase(config.DatabaseFilepath)
 	notificationManager := notifications.NewNotificationManager(config)
 
 	for {
@@ -43,9 +44,20 @@ func consumeDiscoveredHosts(config *config.Config, newHosts *[]arp.Host, mu *syn
 		*newHosts = (*newHosts)[1:]
 		mu.Unlock()
 
-		if !database.HasHost(host) {
-			database.AddHost(&host)
-			database.Save()
+		if !db.HasHost(host) {
+			vendorPart := arp.GetVendorPart(host.MAC.String())
+			if vendor := db.GetVendorIfExists(vendorPart); vendor != "" {
+				log.Printf("Found cached vendor='%v'", vendor)
+				host.Vendor = vendor
+			} else {
+				host.TryLookupVendor()
+				if host.Vendor != "" {
+					db.AddVendor(vendorPart, host.Vendor)
+					log.Printf("Lookup vendor, found='%v'", host.Vendor)
+				}
+			}
+			db.AddHost(&host)
+			db.Save()
 			notificationManager.NotifyNewHost(&host)
 		}
 	}

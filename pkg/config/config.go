@@ -17,7 +17,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Iface:             "eth0",
-		DatabaseFilepath:  "/var/lib/arper/hosts.json",
+		DatabaseFilepath:  "/var/lib/arper/database.json",
 		DiscordWebhookURL: "",
 	}
 }

@@ -1,33 +1,37 @@
-package arp
+package database
 
 import (
 	"log"
 	"os"
 	"path"
 
+	"github.com/granddave/arper/pkg/arp"
 	"github.com/granddave/arper/pkg/utils"
 )
 
+type DatabaseContents struct {
+	Hosts   []arp.Host
+	Vendors map[string]string
+}
+
 type Database struct {
-	Contents struct {
-		Hosts   []Host
-		Vendors map[string]string
-	}
+	Contents DatabaseContents
 	Filepath string
 }
 
-func (db *Database) Len() int {
+func (db *Database) NumHosts() int {
 	return len(db.Contents.Hosts)
 }
 
-func (db *Database) AddHost(host *Host) {
-	host.TryLookupHostname()
-	db.setVendorForHost(host)
+func (db *Database) NumVendors() int {
+	return len(db.Contents.Vendors)
+}
 
+func (db *Database) AddHost(host *arp.Host) {
 	db.Contents.Hosts = append(db.Contents.Hosts, *host)
 }
 
-func (db *Database) HasHost(other Host) bool {
+func (db *Database) HasHost(other arp.Host) bool {
 	for _, host := range db.Contents.Hosts {
 		if other.MAC.String() == host.MAC.String() {
 			return true
@@ -36,16 +40,18 @@ func (db *Database) HasHost(other Host) bool {
 	return false
 }
 
-func (db *Database) setVendorForHost(host *Host) {
-	vendorPart := GetVendorPart(host.MAC.String())
+func (db *Database) GetVendorIfExists(mac string) string {
+	vendorPart := arp.GetVendorPart(mac)
+
 	if vendor, exists := db.Contents.Vendors[vendorPart]; exists {
-		host.Vendor = vendor
-	} else {
-		host.TryLookupVendor()
-		if host.Vendor != "" {
-			db.Contents.Vendors[vendorPart] = host.Vendor
-		}
+		return vendor
 	}
+
+	return ""
+}
+
+func (db *Database) AddVendor(mac string, vendor string) {
+	db.Contents.Vendors[mac] = vendor
 }
 
 func initializeDatabaseFile(filepath string) bool {
@@ -70,30 +76,40 @@ func initializeDatabaseFile(filepath string) bool {
 func NewDatabase(databaseFilepath string) *Database {
 	initializeDatabaseFile(databaseFilepath)
 
-	db := Database{Filepath: databaseFilepath}
+	db := Database{
+		Contents: DatabaseContents{
+			Hosts:   make([]arp.Host, 0),
+			Vendors: make(map[string]string),
+		},
+		Filepath: databaseFilepath,
+	}
 
 	if err := utils.Deserialize(&db.Contents, db.Filepath); err != nil {
 		log.Printf("Failed to deserialize database: %v", err)
 
 		log.Printf("Removing and recreating")
-		// TODO: Make backup and recreate
+		// TODO: Make backup
 		initializeDatabaseFile(databaseFilepath)
-
-		return nil
 	}
 
-	numHosts := db.Len()
+	numHosts := db.NumHosts()
 	if numHosts == 1 {
 		log.Printf("Parsed 1 host")
 	} else if numHosts > 1 {
 		log.Printf("Parsed %v hosts", numHosts)
+	}
+	numVendors := db.NumVendors()
+	if numVendors == 1 {
+		log.Printf("Parsed 1 vendor")
+	} else if numHosts > 1 {
+		log.Printf("Parsed %v vendors", numVendors)
 	}
 
 	return &db
 }
 
 func (db *Database) Save() {
-	if err := utils.Serialize(db.Contents.Hosts, db.Filepath); err != nil {
+	if err := utils.Serialize(db.Contents, db.Filepath); err != nil {
 		log.Printf("Failed to serialize database: %v", err)
 	}
 }

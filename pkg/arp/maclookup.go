@@ -8,10 +8,10 @@ import (
 )
 
 func GetVendorPart(macAddress string) string {
-	return macAddress[0:7]
+	return macAddress[0:8]
 }
 
-func GetVendorName(macAddressOrVendorPart string) string {
+func LookupVendorName(macAddressOrVendorPart string) string {
 	vendorPart := macAddressOrVendorPart
 	if len(macAddressOrVendorPart) > 8 {
 		vendorPart = GetVendorPart(macAddressOrVendorPart)

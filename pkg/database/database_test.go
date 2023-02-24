@@ -1,4 +1,4 @@
-package arp
+package database
 
 import (
 	"net"
@@ -6,6 +6,8 @@ import (
 	"path"
 	"testing"
 	"time"
+
+	"github.com/granddave/arper/pkg/arp"
 )
 
 func TestInitializeDatabaseFile(t *testing.T) {
@@ -35,7 +37,7 @@ func TestInitializeDatabaseFile(t *testing.T) {
 
 func TestDatabase(t *testing.T) {
 	// Arrange
-	host := Host{
+	host := arp.Host{
 		MAC:       net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66},
 		IP:        net.ParseIP("192.0.2.1"),
 		Hostname:  "example.com",
@@ -50,15 +52,15 @@ func TestDatabase(t *testing.T) {
 	// TODO: Test NewDatabase() by reading serialized database
 
 	// Assert
-	if len(db.Hosts) != 1 {
-		t.Errorf("AddHost failed, expected length to be 1, got %d", len(db.Hosts))
+	if len(db.Contents.Hosts) != 1 {
+		t.Errorf("AddHost failed, expected length to be 1, got %d", len(db.Contents.Hosts))
 	}
 
 	if !db.HasHost(host) {
 		t.Errorf("HasHost failed, expected host to exist, got false")
 	}
 
-	if db.Len() != 1 {
-		t.Errorf("Len failed, expected length to be 1, got %d", db.Len())
+	if db.NumHosts() != 1 {
+		t.Errorf("Len failed, expected length to be 1, got %d", db.NumHosts())
 	}
 }

@@ -33,7 +33,7 @@ func (h *Host) TryLookupHostname() {
 }
 
 func (h *Host) TryLookupVendor() {
-	h.Vendor = GetVendorName(h.MAC.String())
+	h.Vendor = LookupVendorName(h.MAC.String())
 }
 
 func (h *Host) String() string {
