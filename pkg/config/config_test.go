@@ -20,7 +20,7 @@ func TestNewConfig(t *testing.T) {
 			},
 		},
 		{
-			[]string{"-iface", "eth1", "-db", "/tmp/hosts.json", "https://discord.com/api/webhooks/891230"},
+			[]string{"--iface", "eth1", "--database-filepath", "/tmp/hosts.json", "--discord-webhook-url", "https://discord.com/api/webhooks/891230"},
 			&Config{
 				Iface:             "eth1",
 				DatabaseFilepath:  "/tmp/hosts.json",
@@ -28,7 +28,7 @@ func TestNewConfig(t *testing.T) {
 			},
 		},
 		{
-			[]string{"-iface", "lo"},
+			[]string{"--iface", "lo"},
 			&Config{
 				Iface:             "lo",
 				DatabaseFilepath:  "/var/lib/arper/database.json",
@@ -36,7 +36,7 @@ func TestNewConfig(t *testing.T) {
 			},
 		},
 		{
-			[]string{"-db", "/tmp/hosts2.json"},
+			[]string{"--database-filepath", "/tmp/hosts2.json"},
 			&Config{
 				Iface:             "eth0",
 				DatabaseFilepath:  "/tmp/hosts2.json",
@@ -44,7 +44,7 @@ func TestNewConfig(t *testing.T) {
 			},
 		},
 		{
-			[]string{"-discord-webhook", "https://discord.com/api/webhooks/891230"},
+			[]string{"--discord-webhook-url", "https://discord.com/api/webhooks/891230"},
 			&Config{
 				Iface:             "eth0",
 				DatabaseFilepath:  "/var/lib/arper/database.json",

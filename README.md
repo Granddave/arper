@@ -27,19 +27,25 @@ Root privileges are required since `arper` listen on raw packets on the specifie
 network interface.
 
 ```sh
-sudo arper [-db PATH] [-iface IFACE] [-discord-webhook URL]
+sudo arper [flags]
 ```
 
-### Command line arguments
+### Configuration
 
-```
-  -db string
-        filepath to database (default "/var/lib/arper/hosts.json")
-  -discord-webhook string
-        Discord Webhook URL for notifications
-  -iface string
-        network interface to use (default "eth0")
-```
+Configurations can be set in multiple ways following the precedence order below.
+
+1. Command line flag
+2. Config file
+3. Default value
+
+arper doesn't create any configuration file, but looks for `./arper.yaml` first and
+`/etc/arper/arper.yaml` second.
+
+| Configuration | Config file key | Default | CLI Flag |
+|-|-|-|-|-|
+| Listening interface | `Iface`             | `eth0`                         | `--iface [inteface]`          |
+| Database filepath   | `DatabaseFilepath`  | `/var/lib/arper/database.json` | `--database-filepath [path]`  |
+| Discord webhook URL | `DiscordWebhookURL` | *(empty)*                      | `--discord-webhook-url [url]` |
 
 
 ## Build Requirements
@@ -50,14 +56,9 @@ Go version >= 1.18
 ## Build Instructions
 
 ```bash
+go mod tidy
 go build ./cmd/arper
 ```
-
-
-## Roadmap
-
-- Configuration file support
-- Hardware vendor lookup caching to minimize the API requests
 
 
 ## Similar applications
