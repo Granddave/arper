@@ -1,0 +1,4 @@
+---
+Iface: eth0
+DatabaseFilepath: /var/lib/arper/database.json
+DiscordWebhookURL:

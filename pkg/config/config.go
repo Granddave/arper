@@ -1,12 +1,16 @@
 package config
 
 import (
-	"flag"
+	"fmt"
 	"log"
 	"reflect"
+	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-const DefaultConfigFilepath = "/etc/arper/config.json"
+const DefaultDatabaseFilepath = "/var/lib/arper/database.json"
 
 type Config struct {
 	Iface             string
@@ -14,43 +18,56 @@ type Config struct {
 	DiscordWebhookURL string
 }
 
-func DefaultConfig() *Config {
-	return &Config{
-		Iface:             "eth0",
-		DatabaseFilepath:  "/var/lib/arper/database.json",
-		DiscordWebhookURL: "",
-	}
-}
-
 func NewConfig() *Config {
-	config := DefaultConfig()
-	config.readConfigFromFile(DefaultConfigFilepath)
-	config.parseFlags()
+	cfg := Config{}
 
-	config.logCurrentConfigs()
+	rootCmd := &cobra.Command{
+		Use: "arper",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Config:\n%s", cfg.String())
+		},
+	}
 
-	return config
+	rootCmd.PersistentFlags().StringVar(&cfg.Iface, "iface", "eth0", "network interface to use")
+	rootCmd.PersistentFlags().StringVar(&cfg.DatabaseFilepath, "database", DefaultDatabaseFilepath, "path to the database file")
+	rootCmd.PersistentFlags().StringVar(&cfg.DiscordWebhookURL, "discord-webhook", "", "Discord webhook URL")
+
+	viper.SetEnvPrefix("arper")
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	viper.SetConfigName("arper")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("/etc/arper")
+	viper.SetConfigType("yaml")
+
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			log.Fatalf("Error reading config file: %s", err)
+		}
+	}
+
+	if err := viper.Unmarshal(&cfg); err != nil {
+		log.Fatalf("Error unmarshaling config: %s", err)
+	}
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatalf("Error executing root command: %s", err)
+	}
+
+	return &cfg
 }
 
-func (c *Config) readConfigFromFile(configFilename string) {
-	// TODO: Implement
-}
-
-func (c *Config) parseFlags() {
-	flag.StringVar(&c.Iface, "iface", c.Iface, "network interface to use")
-	flag.StringVar(&c.DatabaseFilepath, "db", c.DatabaseFilepath, "filepath to database")
-	flag.StringVar(&c.DiscordWebhookURL, "discord-webhook", c.DiscordWebhookURL, "Discord Webhook URL for notifications")
-	flag.Parse()
-}
-
-func (c *Config) logCurrentConfigs() {
+func (c *Config) String() string {
 	v := reflect.ValueOf(*c)
 	t := v.Type()
+	s := ""
 
-	log.Println("Active configuration:")
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldName := t.Field(i).Name
-		log.Printf("  %s: %v\n", fieldName, field.Interface())
+		s += fmt.Sprintf("  %s: %v\n", fieldName, field.Interface())
 	}
+
+	return s
 }
