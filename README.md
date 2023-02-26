@@ -41,11 +41,11 @@ Configurations can be set in multiple ways following the precedence order below.
 arper doesn't create any configuration file, but looks for `./arper.yaml` first and
 `/etc/arper/arper.yaml` second.
 
-| Configuration | Config file key | Default | CLI Flag |
-|-|-|-|-|-|
-| Listening interface | `Iface`             | `eth0`                         | `--iface [inteface]`          |
-| Database filepath   | `DatabaseFilepath`  | `/var/lib/arper/database.json` | `--database-filepath [path]`  |
-| Discord webhook URL | `DiscordWebhookURL` | *(empty)*                      | `--discord-webhook-url [url]` |
+| Configuration | CLI Flag | Config file key | Default |
+|---|---|---|---|
+| Listening interface | `--iface [inteface]`          | `Iface`             | `eth0`                         |
+| Database filepath   | `--database-filepath [path]`  | `DatabaseFilepath`  | `/var/lib/arper/database.json` |
+| Discord webhook URL | `--discord-webhook-url [url]` | `DiscordWebhookURL` | *(empty)*                      |
 
 
 ## Build Requirements
