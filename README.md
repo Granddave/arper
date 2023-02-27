@@ -30,6 +30,7 @@ network interface.
 sudo arper [flags]
 ```
 
+
 ### Configuration
 
 Configurations can be set in multiple ways following the precedence order below.
@@ -48,12 +49,25 @@ arper doesn't create any configuration file, but looks for `./arper.yaml` first 
 | Discord webhook URL | `--discord-webhook-url [url]` | `DiscordWebhookURL` | *(empty)*                      |
 
 
-## Build Requirements
+## Build and run in Docker
 
-Go version >= 1.18
+```sh
+docker build -t arper .
+```
+
+```sh
+docker run \
+  --rm -it \
+  --net host \
+  -v $(pwd)/database.json:/var/lib/arper/database.json \
+  -v $(pwd)/arper.yaml:/arper.yaml \
+  arper
+```
 
 
-## Build Instructions
+## Local build
+
+Go version >= 1.18 is required.
 
 ```bash
 go mod tidy
